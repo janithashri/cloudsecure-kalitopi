@@ -19,7 +19,7 @@
 ---
 
 <p align="center">
-<img src="docs/images/hero.png" width="1000">
+<img src="docs/images/hero.png" alt="CloudSecure hero screenshot" width="1000">
 </p>
 
 ---
