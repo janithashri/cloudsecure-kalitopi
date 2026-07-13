@@ -1,0 +1,4 @@
+rich==13.7.0
+click==8.1.7
+reportlab
+# Add other dependencies if needed, e.g., requests, if you decide to upload results later

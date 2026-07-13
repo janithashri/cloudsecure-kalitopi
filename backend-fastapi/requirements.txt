@@ -1,0 +1,6 @@
+# Local pip / full install. Docker uses requirements-core.txt (API) and requirements-deep.txt (deep-scan worker).
+-r requirements-core.txt
+-r requirements-anomaly.txt
+cartography>=0.133.0
+aioboto3>=13.4.0,<14
+policyuniverse>=1.5.0

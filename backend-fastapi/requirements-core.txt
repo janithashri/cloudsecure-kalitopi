@@ -1,0 +1,18 @@
+# Pinned for reliable offline/flaky-network installs (API + inventory; no Cartography).
+fastapi==0.115.6
+starlette==0.41.3
+pydantic==2.10.6
+pydantic-core==2.27.2
+uvicorn[standard]==0.32.1
+python-dotenv==1.0.1
+pydantic-settings==2.7.1
+sqlalchemy==2.0.36
+psycopg[binary]==3.2.3
+passlib[bcrypt]==1.7.4
+celery[redis]==5.4.0
+redis==5.2.1
+boto3==1.36.1
+botocore==1.36.1
+neo4j==6.0.3
+requests==2.32.3
+python-multipart==0.0.20

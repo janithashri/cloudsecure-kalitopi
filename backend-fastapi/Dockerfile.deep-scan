@@ -1,0 +1,22 @@
+# Deep-scan worker: AWS-only Cartography (skips OCI/Azure/GCP pip deps).
+FROM --platform=linux/amd64 python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1
+ENV PIP_DEFAULT_TIMEOUT=300
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+WORKDIR /app
+
+RUN pip install --upgrade pip setuptools wheel
+
+COPY requirements-core.txt requirements-cartography-aws.txt ./
+
+# Split steps so a flaky PyPI response can be retried without redoing everything.
+RUN pip install --no-cache-dir -r requirements-core.txt
+RUN pip install --no-cache-dir aioboto3==13.4.0
+RUN pip install --no-cache-dir --no-deps cartography==0.133.0
+RUN pip install --no-cache-dir -r requirements-cartography-aws.txt
+
+COPY . .
+ENV PYTHONPATH=/app
+
+CMD ["celery", "-A", "worker.celery_app:celery_app", "worker", "--loglevel=info", "-Q", "deep_scan", "--concurrency=2"]

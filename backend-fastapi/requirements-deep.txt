@@ -1,0 +1,6 @@
+# Legacy full Cartography install (pulls OCI/Azure/GCP — very slow).
+# Docker deep-scan uses Dockerfile.deep-scan + requirements-cartography-aws.txt instead.
+-r requirements-core.txt
+botocore==1.36.1
+cartography==0.133.0
+aioboto3==13.4.0

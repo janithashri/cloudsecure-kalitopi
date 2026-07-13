@@ -1,0 +1,40 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "resource-explorer-2:Search",
+          "resource-explorer-2:GetIndex",
+          "resource-explorer-2:GetDefaultView",
+          "resource-explorer-2:ListViews",
+          "config:SelectResourceConfig",
+          "config:DescribeConfigurationRecorderStatus",
+          "s3:GetBucketPolicy",
+          "s3:GetBucketAcl",
+          "s3:GetBucketEncryption",
+          "s3:GetBucketVersioning",
+          "s3:GetBucketLogging",
+          "s3:GetPublicAccessBlock",
+          "ec2:DescribeInstances",
+          "ec2:DescribeSecurityGroups",
+          "iam:GetRole",
+          "iam:GetUser",
+          "iam:ListRolePolicies",
+          "iam:GetRolePolicy",
+          "iam:ListUserPolicies",
+          "iam:GetUserPolicy",
+          "iam:ListMFADevices",
+          "rds:DescribeDBInstances",
+          "kms:DescribeKey",
+          "kms:GetKeyPolicy",
+          "kms:GetKeyRotationStatus",
+          "cloudtrail:DescribeTrails",
+          "cloudtrail:GetTrailStatus",
+          "cloudtrail:GetEventSelectors",
+          "sts:GetCallerIdentity"
+        ],
+        "Resource": "*"
+      }
+    ]
+  }

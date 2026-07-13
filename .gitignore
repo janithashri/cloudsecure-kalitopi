@@ -1,0 +1,75 @@
+# --- Secrets & environment (never commit) ---
+.env
+.env.local
+.env.*.local
+!.env.example
+!**/.env.example
+frontend/.env
+backend/.env
+IaC_backend/.env
+
+# Credentials & keys
+*.pem
+*.p12
+*.pfx
+*.key
+secrets/
+credentials
+.aws/
+
+# --- Generated / local runtime ---
+output/
+backend-fastapi/celerybeat-schedule
+backend-fastapi/celerybeat.pid
+backend/celerybeat-schedule
+backend/celerybeat.pid
+IaC_backend/temp_scans/
+IaC_backend/venv/
+backend/venv/
+backend-fastapi/venv/
+.venv/
+venv/
+env/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+.pypirc
+.coverage
+htmlcov/
+.pytest_cache/
+
+# --- Node / frontend ---
+node_modules/
+frontend/node_modules/
+frontend/dist/
+npm-debug.log*
+.pnp/
+.pnp.js
+
+# --- Django / DB ---
+*.log
+local_settings.py
+db.sqlite3
+media/
+staticfiles/
+
+# --- IDE / OS ---
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+
+# --- Reports (may contain account data) ---
+report_*.pdf
+report_*.csv
+IaC_backend/report_*.pdf
+IaC_backend/report_*.csv
+*.pdf

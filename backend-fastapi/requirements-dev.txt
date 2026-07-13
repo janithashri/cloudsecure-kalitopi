@@ -1,0 +1,4 @@
+# Lighter install for local API + inventory scans (no Cartography / deep scan).
+# Use requirements.txt in Docker for full stack.
+
+-r requirements-core.txt

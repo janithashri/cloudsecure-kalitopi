@@ -1,0 +1,17 @@
+rule_id,severity,resource,description,location
+AVD-AWS-0177,MEDIUM,aws_db_instance.default,RDS Deletion Protection Disabled,C:\Users\Simran Raitani\OneDrive\Desktop\CyberShield\cloud-secure-kaalitopi\Cloudsecure_cli\test_vulnerable.tf:6
+AVD-AWS-0176,MEDIUM,aws_db_instance.default,RDS IAM Database Authentication Disabled,C:\Users\Simran Raitani\OneDrive\Desktop\CyberShield\cloud-secure-kaalitopi\Cloudsecure_cli\test_vulnerable.tf:6
+AVD-AWS-0133,LOW,aws_db_instance.default,Enable Performance Insights to detect potential problems,C:\Users\Simran Raitani\OneDrive\Desktop\CyberShield\cloud-secure-kaalitopi\Cloudsecure_cli\test_vulnerable.tf:6
+AVD-AWS-0080,HIGH,aws_db_instance.default,RDS encryption has not been enabled at a DB Instance level.,C:\Users\Simran Raitani\OneDrive\Desktop\CyberShield\cloud-secure-kaalitopi\Cloudsecure_cli\test_vulnerable.tf:6
+AVD-AWS-0082,CRITICAL,aws_db_instance.default,A database resource is marked as publicly accessible.,C:\Users\Simran Raitani\OneDrive\Desktop\CyberShield\cloud-secure-kaalitopi\Cloudsecure_cli\test_vulnerable.tf:6
+AVD-AWS-0077,MEDIUM,aws_db_instance.default,RDS Cluster and RDS instance should have backup retention longer than default 1 day,C:\Users\Simran Raitani\OneDrive\Desktop\CyberShield\cloud-secure-kaalitopi\Cloudsecure_cli\test_vulnerable.tf:6
+AVD-AWS-0086,HIGH,aws_s3_bucket.b,S3 Access block should block public ACL,C:\Users\Simran Raitani\OneDrive\Desktop\CyberShield\cloud-secure-kaalitopi\Cloudsecure_cli\test_vulnerable.tf:17
+AVD-AWS-0087,HIGH,aws_s3_bucket.b,S3 Access block should block public policy,C:\Users\Simran Raitani\OneDrive\Desktop\CyberShield\cloud-secure-kaalitopi\Cloudsecure_cli\test_vulnerable.tf:17
+AVD-AWS-0088,HIGH,aws_s3_bucket.b,Unencrypted S3 bucket.,C:\Users\Simran Raitani\OneDrive\Desktop\CyberShield\cloud-secure-kaalitopi\Cloudsecure_cli\test_vulnerable.tf:17
+AVD-AWS-0089,MEDIUM,aws_s3_bucket.b,S3 Bucket does not have logging enabled.,C:\Users\Simran Raitani\OneDrive\Desktop\CyberShield\cloud-secure-kaalitopi\Cloudsecure_cli\test_vulnerable.tf:17
+AVD-AWS-0090,MEDIUM,aws_s3_bucket.b,S3 Data should be versioned,C:\Users\Simran Raitani\OneDrive\Desktop\CyberShield\cloud-secure-kaalitopi\Cloudsecure_cli\test_vulnerable.tf:17
+AVD-AWS-0132,HIGH,aws_s3_bucket.b,S3 encryption should use Customer Managed Keys,C:\Users\Simran Raitani\OneDrive\Desktop\CyberShield\cloud-secure-kaalitopi\Cloudsecure_cli\test_vulnerable.tf:17
+AVD-AWS-0091,HIGH,aws_s3_bucket.b,S3 Access Block should Ignore Public Acl,C:\Users\Simran Raitani\OneDrive\Desktop\CyberShield\cloud-secure-kaalitopi\Cloudsecure_cli\test_vulnerable.tf:17
+AVD-AWS-0092,HIGH,aws_s3_bucket_acl.example,S3 Buckets not publicly accessible through ACL.,C:\Users\Simran Raitani\OneDrive\Desktop\CyberShield\cloud-secure-kaalitopi\Cloudsecure_cli\test_vulnerable.tf:24
+AVD-AWS-0093,HIGH,aws_s3_bucket.b,S3 Access block should restrict public bucket to limit access,C:\Users\Simran Raitani\OneDrive\Desktop\CyberShield\cloud-secure-kaalitopi\Cloudsecure_cli\test_vulnerable.tf:17
+AVD-AWS-0094,LOW,aws_s3_bucket.b,S3 buckets should each define an aws_s3_bucket_public_access_block,C:\Users\Simran Raitani\OneDrive\Desktop\CyberShield\cloud-secure-kaalitopi\Cloudsecure_cli\test_vulnerable.tf:17

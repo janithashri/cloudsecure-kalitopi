@@ -1,0 +1,244 @@
+services:
+
+  db:
+
+    image: postgres:15
+
+    environment:
+
+      POSTGRES_DB: ${POSTGRES_DB}
+
+      POSTGRES_USER: ${POSTGRES_USER}
+
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    volumes:
+
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cloudsecure}"]
+
+      interval: 5s
+
+      timeout: 5s
+
+      retries: 5
+
+
+
+  valkey:
+
+    image: valkey/valkey:latest
+
+    ports:
+
+      - "6379:6379"
+
+
+
+  # Optional local Neo4j (default stack uses Neo4j AuraDB via NEO4J_URI in .env)
+
+  neo4j:
+
+    profiles: [local-neo4j]
+
+    image: neo4j:5-community
+
+    environment:
+
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD}
+
+      NEO4J_PLUGINS: '["graph-data-science"]'
+
+    ports:
+
+      - "7474:7474"
+
+      - "7687:7687"
+
+    volumes:
+
+      - neo4j_data:/data
+
+
+
+  backend:
+
+    build: ./backend-fastapi
+
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+    volumes:
+
+      - ./backend-fastapi:/app
+
+      - ~/.aws:/root/.aws:ro
+
+    ports:
+
+      - "8000:8000"
+
+    env_file: .env
+
+    environment:
+
+      OPA_URL: http://opa:8181
+
+      DJANGO_SETTINGS_MODULE: ""
+
+    depends_on:
+
+      db:
+
+        condition: service_healthy
+
+      valkey:
+
+        condition: service_started
+
+      opa:
+
+        condition: service_started
+
+
+
+  celery:
+
+    build: ./backend-fastapi
+
+    command: celery -A worker.celery_app:celery_app worker --loglevel=info -Q default,inventory,anomaly
+
+    volumes:
+
+      - ./backend-fastapi:/app
+
+      - ~/.aws:/root/.aws:ro
+
+      - ${ANOMALY_DATASET_HOST_PATH:-./data/aws_dataset}:/data/aws_dataset:ro
+
+    env_file: .env
+
+    environment:
+
+      OPA_URL: http://opa:8181
+
+      DJANGO_SETTINGS_MODULE: ""
+
+    depends_on:
+
+      - db
+
+      - valkey
+
+      - opa
+
+
+
+  celery-beat:
+
+    build: ./backend-fastapi
+
+    command: celery -A worker.celery_app:celery_app beat --loglevel=info
+
+    volumes:
+
+      - ./backend-fastapi:/app
+
+    env_file: .env
+
+    environment:
+
+      OPA_URL: http://opa:8181
+
+      DJANGO_SETTINGS_MODULE: ""
+
+    depends_on:
+
+      - db
+
+      - valkey
+
+      - opa
+
+
+
+  celery-deep-scan:
+
+    profiles: [deep-scan]
+
+    build:
+
+      context: ./backend-fastapi
+
+      dockerfile: Dockerfile.deep-scan
+
+    command: celery -A worker.celery_app:celery_app worker --loglevel=info -Q deep_scan --concurrency=2
+
+    volumes:
+
+      - ./backend-fastapi:/app
+
+      - ~/.aws:/root/.aws:ro
+
+    env_file: .env
+
+    environment:
+
+      OPA_URL: http://opa:8181
+
+      DJANGO_SETTINGS_MODULE: ""
+
+      CELERY_IMPORT_DEEP_SCAN: "true"
+
+    depends_on:
+
+      - db
+
+      - valkey
+
+      - opa
+
+
+
+  opa:
+
+    image: openpolicyagent/opa:latest
+
+    command: run --server --addr 0.0.0.0:8181
+
+    ports:
+
+      - "8181:8181"
+
+
+
+  frontend:
+
+    build: ./frontend
+
+    command: npm run dev -- --host
+
+    volumes:
+
+      - ./frontend:/app
+
+      - /app/node_modules
+
+    ports:
+
+      - "3000:3000"
+
+    environment:
+
+      VITE_PROXY_TARGET: http://backend:8000
+
+
+
+volumes:
+
+  postgres_data:
+
+  neo4j_data:
+
