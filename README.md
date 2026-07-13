@@ -11,7 +11,7 @@
 <p align="center">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-blue.svg">
   <img alt="Python" src="https://img.shields.io/badge/python-3.11+-green.svg">
-  <img alt="Django" src="https://img.shields.io/badge/django-4.x-green.svg">
+  <img alt="FastAPI" src="https://img.shields.io/badge/fastapi-2.x-009688.svg">
   <img alt="React" src="https://img.shields.io/badge/react-18-blue.svg">
   <img alt="Docker" src="https://img.shields.io/badge/docker-compose-blue.svg">
   <img alt="OPA" src="https://img.shields.io/badge/OPA-rego-purple.svg">
@@ -38,17 +38,37 @@
 
 | Feature | Description |
 |---|---|
-| **One-click AWS Scan** | Scans S3, EC2, IAM, RDS, KMS, and CloudTrail in under 5 minutes |
-| **350+ Security Checks** | CIS Benchmark and India-specific regulatory rules powered by OPA/Rego |
-| **Attack Path Analysis** | Neo4j-backed graph engine maps lateral movement and privilege escalation paths |
-| **Deep Scan / Graph View** | Interactive node-graph visualization of your entire AWS resource topology |
+| **One-click AWS Scan** | Scans S3, EC2, IAM, RDS, KMS, and CloudTrail via Resource Explorer + boto3 |
+| **350+ Security Checks** | CIS Benchmark and India-specific (DPDP, RBI, SBE) rules powered by OPA/Rego |
+| **Consolidated S3 Rules** | Single contextual S3 public-exposure rule with optional live HTTP probes |
+| **Attack Path Analysis** | Neo4j graph engine maps lateral movement and privilege escalation paths |
+| **Deep Scan / Graph View** | Cartography-powered full AWS topology ingestion and interactive graph UI |
+| **Graph Intelligence** | GDS analytics (PageRank, betweenness, Louvain) escalate severity and surface shadow risks |
+| **Anomaly Detection** | CloudTrail embedding pipeline flags unusual principal behaviour with visual drill-down |
+| **Rule Effectiveness** | Funnel metrics show how rules reduce noise from raw misconfigs to actionable findings |
 | **Compliance Reporting** | Exportable reports mapped to CIS, DPDP, RBI, and SBE frameworks |
 | **Multi-tenant** | Isolated workspaces per team or customer |
-| **Real-time Findings** | Findings appear as resources are scanned — no waiting for full completion |
+| **Real-time Findings** | Findings stream in as resources are scanned |
 | **Suppression Workflow** | Mark findings as suppressed to track accepted risk |
-| **Delta Scanning** | Incremental scans only re-fetch resources that have changed |
-| **IaC Scanning** | Scans the terraform file in the github repo for possible vulnerability. |
-| **Intelligent Auditing** | Intelligent remediation steps by the Sarvam AI (India first approach) |
+| **Delta Scanning** | Incremental scans re-fetch only changed resources |
+| **Custom Rego Rules** | Tenant-scoped policies evaluated alongside built-in rules |
+| **IaC Scanning** | Scan Terraform in GitHub repos or locally via CLI |
+| **AI Remediation** | Sarvam AI generates remediation guidance for high-severity issues |
+
+### Platform modules (dashboard)
+
+| Tab | What it does |
+|---|---|
+| **Dashboard** | Severity, framework, and resource-type breakdowns across open findings |
+| **Scan** | Trigger inventory pulls and monitor run progress |
+| **Findings** | Browse, filter, suppress, and export misconfiguration results |
+| **Deep Scan** | Launch Cartography ingestion and explore the resource graph |
+| **Graph Intel** | View graph-adjusted severity, escalation reasons, and shadow-risk nodes |
+| **Rule Effectiveness** | Compare rule hit rates and noise-reduction funnel per provider |
+| **Anomaly** | Run CloudTrail anomaly jobs, view embeddings, metrics, and entity findings |
+| **Connect / Providers** | Link AWS accounts via STS assume-role and test connectivity |
+| **Reports** | Generate compliance-oriented exports |
+| **Docs** | In-app setup reference for env vars and troubleshooting |
 
 
 ---
@@ -129,43 +149,47 @@ The dashboard gives you an at-a-glance view of your security posture:
 ---
 
 ## 🏗️ Architecture
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                        Browser                              │
 │                React + Vite (port 3000)                     │
 └──────────────────────────┬──────────────────────────────────┘
-                           │ REST API
+                           │ REST API (Token auth)
 ┌──────────────────────────▼──────────────────────────────────┐
-│                Django / Flask Backend                       │
-│      DRF Token Auth · Multi-tenant · REST API               │
+│              FastAPI backend (backend-fastapi/)               │
+│   Auth · Providers · Findings · Graph · Anomaly · Deep Scan │
 └──────┬────────────┬─────────────────┬───────────┬───────────┘
        │            │                 │           │
 ┌──────▼───┐  ┌─────▼──────┐   ┌──────▼──────┐  ┌─▼───────────┐
-│PostgreSQL│  │   Valkey   │   │    Neo4j    │  │  Sarvam AI  │
+│PostgreSQL│  │   Valkey   │   │ Neo4j Aura  │  │  Sarvam AI  │
 │  (state) │  │  (broker)  │   │   (graph)   │  │(Remediation)│
 └──────────┘  └─────┬──────┘   └─────────────┘  └─────────────┘
                     │
           ┌─────────▼─────────┐           ┌───────────────────┐
           │  Celery Workers   │           │   IaC Scanner     │
           │ inventory · rules │           │ (tfsec / checkov) │
+          │ anomaly · deep_scan          │                   │
           └─────────┬─────────┘           └─────────▲─────────┘
                     │                               │
           ┌─────────▼──────────┐          ┌─────────┴─────────┐
-          │    AWS (boto3)     │          │  GitHub Repos     │
-          │   STS AssumeRole   │          │  (Cloned Temp)    │
+          │  OPA + Rego rules  │          │  GitHub Repos     │
+          │  AWS (boto3 + STS) │          │  (cloned temp)    │
           └────────────────────┘          └───────────────────┘
-
 ```
 
 | Component | Technology | Role |
 |---|---|---|
 | Frontend | React 18 + Vite + Tailwind | Dashboard UI |
-| Backend | Django 4 + Django REST Framework | API server, auth, tenant logic | Flask
-| Task Queue | Celery + Valkey | Async inventory pulls and rule evaluation |
-| Database | PostgreSQL 15 | Findings, inventory runs, user/tenant data |
-| Graph DB | Neo4j 5 | Resource relationship graph, attack paths |
-| Policy Engine | OPA (Open Policy Agent) + Rego | Security rule evaluation |
-| AWS Integration | boto3 + STS AssumeRole | Read-only AWS resource discovery |
+| API | **FastAPI 2** + SQLAlchemy + Pydantic | REST API, auth, tenant logic |
+| Task Queue | Celery + Valkey | Async inventory, rules, anomaly, deep scan |
+| Database | PostgreSQL 15 | Findings, runs, users, tenants |
+| Graph DB | **Neo4j AuraDB** (or local Neo4j profile) | Resource graph, attack paths, GDS analytics |
+| Policy Engine | OPA + Rego | Security rule evaluation |
+| AWS Integration | boto3 + STS AssumeRole | Read-only resource discovery |
+| Deep Scan | Cartography (AWS-only image) | Full relationship ingestion into Neo4j |
+
+> Legacy `backend/` (Django) remains in the repo for reference; **Docker Compose runs `backend-fastapi/`** as the API and worker image.
 
 ---
 
@@ -182,8 +206,8 @@ The dashboard gives you an at-a-glance view of your security posture:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/CloudSecure.git
-cd CloudSecure
+git clone https://github.com/janithashri/cloudsecure-kalitopi.git
+cd cloudsecure-kalitopi
 ```
 
 ---
@@ -200,10 +224,10 @@ Edit `.env` with your values:
 
 | Variable | Description | Example |
 |---|---|---|
-| `SECRET_KEY` | Django secret key | `python -c "import secrets; print(secrets.token_urlsafe(50))"` |
+| `SECRET_KEY` | App signing key | `python -c "import secrets; print(secrets.token_urlsafe(50))"` |
 | `POSTGRES_DB` | PostgreSQL database name | `cloudsecure` |
 | `POSTGRES_USER` | PostgreSQL username | `cloudsecure` |
-| `POSTGRES_PASSWORD` | PostgreSQL password | `localpostgres123` |
+| `POSTGRES_PASSWORD` | PostgreSQL password | _(set in .env only)_ |
 | `POSTGRES_HOST` | PostgreSQL host (Docker service name) | `db` |
 | `POSTGRES_PORT` | PostgreSQL port | `5432` |
 | `VALKEY_URL` | Valkey/Redis broker URL | `redis://valkey:6379/0` |
@@ -211,11 +235,10 @@ Edit `.env` with your values:
 | `NEO4J_USER` | Neo4j username | `neo4j` |
 | `NEO4J_PASSWORD` | Neo4j AuraDB password | _(from Aura console)_ |
 | `NEO4J_SHARED_DATABASE` | Aura database name | `neo4j` |
-| `DJANGO_SETTINGS_MODULE` | Django settings module | `cloudsecure.settings.local` |
-| `AWS_DEFAULT_REGION` | Region where Resource Explorer aggregator is active | `us-east-1` |
+| `AWS_DEFAULT_REGION` | Resource Explorer aggregator region | `us-east-1` |
 | `AWS_ACCESS_KEY_ID` | Leave blank — uses `~/.aws` credentials | _(blank)_ |
 | `AWS_SECRET_ACCESS_KEY` | Leave blank — uses `~/.aws` credentials | _(blank)_ |
-| `DEBUG` | Django debug mode | `True` |
+| `DEBUG` | Enable dev CORS / debug helpers | `True` |
 
 ---
 
@@ -263,11 +286,27 @@ python run.py   #To run the development server
 ### 5. Build & Start
 
 ```bash
-make build            # Build Docker images
-make up               # Start all services
-make migrate          # Run database migrations
-make createsuperuser  # Create your admin account
+docker compose build
+docker compose up -d
 ```
+
+Optional workers:
+
+```bash
+# Deep scan (Cartography) — heavy image
+docker compose --profile deep-scan up -d celery-deep-scan
+
+# Local Neo4j instead of AuraDB
+docker compose --profile local-neo4j up -d neo4j
+```
+
+First-time anomaly tables (if using the Anomaly tab):
+
+```bash
+docker compose exec backend python scripts/init_anomaly_tables.py
+```
+
+Create your account via **Register** at http://localhost:3000/login (or `POST /api/auth/register/`).
 
 ---
 
@@ -280,11 +319,11 @@ make createsuperuser  # Create your admin account
 | **IaC Backend** | http://localhost:5000 |
 | **Neo4j Aura** | https://console.neo4j.io (or local Browser at http://localhost:7474 with `--profile local-neo4j`) |
 
-1. Log in at http://localhost:3000/login
+1. Register / log in at http://localhost:3000/login
 2. Go to **Connect** → enter your AWS Account ID and role name `CloudSecureRole`
 3. Click **Test Connection** — a green check confirms the role works
 4. Go to **Scan** → click **Run Scan**
-5. Findings will appear in **Findings** as the scan progresses
+5. Findings appear under **Findings**; use **Graph Intel**, **Deep Scan**, and **Anomaly** for advanced analysis
 
 ---
 
@@ -292,16 +331,16 @@ make createsuperuser  # Create your admin account
 
 | Command | Description |
 |---|---|
-| `make up` | Start all services |
-| `make down` | Stop all services |
-| `make build` | Build Docker images |
-| `make rebuild` | Rebuild images and restart |
-| `make migrate` | Run database migrations |
-| `make createsuperuser` | Create an admin user |
-| `make logs` | Tail backend + celery logs |
-| `make frontend-logs` | Tail frontend logs |
-| `make all-logs` | Tail all service logs |
-| `make shell` | Open Django shell |
+| `docker compose up -d` | Start core services |
+| `docker compose down` | Stop services |
+| `docker compose build` | Build images |
+| `docker compose logs -f backend celery` | Tail API + worker logs |
+| `docker compose --profile deep-scan up -d celery-deep-scan` | Start deep-scan worker |
+| `docker compose restart backend celery` | Reload after `.env` changes |
+| `.\scripts\start-local.ps1` | Windows helper: start stack in two steps |
+| `.\scripts\prepare-public-push.ps1` | Scan for secrets before pushing to a public repo |
+
+> `make migrate` / `make createsuperuser` target the legacy Django `backend/` folder. The FastAPI stack uses `/api/auth/register/` for new users.
 
 ---
 
@@ -386,129 +425,42 @@ pip install cloudsecure-kaalitopi  #This will install the package locally on you
 
 ## 🐛 Troubleshooting
 
-**`NoCredentialError` on connection test**
-The backend mounts `~/.aws` from your host. Run `aws configure` on your machine, or set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in `.env`.
+**`NoCredentialError` on connection test**  
+The backend mounts `~/.aws` from your host. Run `aws configure`, or set `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` in `.env`.
 
-**`Resource Explorer index not found`**
-Run `aws resource-explorer-2 create-index --type AGGREGATOR --region us-east-1` and wait for the index to reach `ACTIVE` state (can take several minutes to over an hour). Verify with `aws resource-explorer-2 get-index --region us-east-1`. Ensure `AWS_DEFAULT_REGION=us-east-1` in your `.env`.
+**`Resource Explorer index not found`**  
+Create the aggregator index in `us-east-1` and wait until `State` is `ACTIVE`:
 
-**`Password authentication failed` for PostgreSQL**
-The Postgres volume was likely initialized with a different password. Reset it:
+```bash
+aws resource-explorer-2 create-index --type AGGREGATOR --region us-east-1
+aws resource-explorer-2 get-index --region us-east-1
+```
+
+**`Password authentication failed` for PostgreSQL**  
+The Postgres volume was initialized with a different password:
+
 ```bash
 docker compose down -v
 docker compose up -d
-make migrate
 ```
 
-```
+**Neo4j / Graph Intel / Deep Scan errors**  
+Set Aura credentials in `.env` (`neo4j+s://...`). See [docs/AURADB.md](docs/AURADB.md). GDS analytics require Aura Professional or local Neo4j (`docker compose --profile local-neo4j up -d neo4j`).
 
----
+**Findings not appearing after scan**  
+1. Ensure OPA is running: `docker compose ps opa`  
+2. Check Celery logs: `docker compose logs -f celery`  
+3. Confirm `OPA_URL: http://opa:8181` in `docker-compose.yml` for `backend` and `celery`
 
-## 🛠️ Useful Commands
+**Celery not picking up tasks**  
+Restart workers: `docker compose restart celery`. Deep-scan tasks use the `deep_scan` queue — start `celery-deep-scan` with `--profile deep-scan`.
 
-| Command | Description |
-|---|---|
-| `cloudsecure-kaalitopi --version` | To know the current verion of the CLI tool. |
-| `cloudsecure-kaalitopi iac test.tf` | To scan the file locally , present in the current working directory. |
-| `cloudsecure-kaalitopi iac test.tf --csv-export` | To scan as well as save the CSV report locally. |
-| `cloudsecure-kaalitopi iac test.tf --pdf-export` | To scan as well as save the PDF report locally. |
-| `cloudsecure-kaalitopi --help` | To get more information about the CLI tool. |
+**Frontend blank page or CORS errors**  
+Rebuild: `docker compose up -d --build frontend`. In dev, Vite proxies `/api` to the backend — leave `VITE_API_URL` unset.
 
----
+**Graph Intelligence shows `gds_available: false`**  
+GDS is not available on AuraDB Free. Upgrade to Aura Professional or use the local Neo4j profile.
 
-## 🐛 Troubleshooting
-
-**`NoCredentialError` on connection test**
-The backend mounts `~/.aws` from your host. Run `aws configure` on your machine, or set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in `.env`.
-
-**`Resource Explorer index not found`**
-Run `aws resource-explorer-2 create-index --type AGGREGATOR --region us-east-1` and wait for the index to reach `ACTIVE` state (can take several minutes to over an hour). Verify with `aws resource-explorer-2 get-index --region us-east-1`. Ensure `AWS_DEFAULT_REGION=us-east-1` in your `.env`.
-
-**`Password authentication failed` for PostgreSQL**
-The Postgres volume was likely initialized with a different password. Reset it:
-```bash
-docker compose down -v
-docker compose up -d
-make migrate
-```
-
-**Neo4j connection refused**
-Neo4j takes ~30 seconds to start. Run `make logs` and wait for `Started.` before triggering a scan.
-
-**Celery not picking up tasks**
-Check `make logs` — you should see `celery@... ready`. If not, restart with `docker compose restart celery`.
-
-**Findings not appearing after scan**
-Ensure OPA is running (`docker compose ps`) and the Rego policies loaded successfully. Check celery logs for `OPA policies loaded`.
-
-**Frontend blank page or CORS errors**
-Rebuild the frontend: `docker compose up -d --build frontend`. Check browser console for failing API requests.
-
-## 🐛 Troubleshooting                                                                                                                        
-                                         
-  > **Before logging in or signing up**, always ensure migrations are run:                                                                     
-  > ```bash
-  > docker compose exec backend python manage.py migrate                                                                                       
-  > ```                                                     
-
-  > **Use `docker compose`** (Docker Compose V2) not `docker-compose` (older V1). If `docker compose` is not found, update Docker Desktop.     
-   
-  ---                                                                                                                                          
-                                                            
-  **Findings not appearing after scan**
-  This is usually caused by three issues working together:
-  1. **OPA unreachable** — Ensure `OPA_URL: http://opa:8181` is set in `docker-compose.yml` for `backend` and `celery`, and `opa` is listed    
-  under `depends_on`. Without this, Celery starts before OPA is ready and policy loading fails silently.                                       
-  2. **Resource type mappings** — The rule engine must map all Resource Explorer short-form types (`s3:bucket`, `ec2:instance`, `rds:db`,      
-  `kms:key`, `cloudtrail:trail`).                                                                                                              
-  3. **Delta scan trap** — If a first scan discovered resources but generated no findings (due to the above issues), subsequent scans skip them
-   as unchanged. The re-evaluation fallback will automatically force-evaluate any resource with zero findings on the next scan.                
-                                                            
-  ---                                                                                                                                          
-                                                            
-  **`NoCredentialError` on connection test**                                                                                                   
-  The backend container needs AWS credentials. The `docker-compose.yml` mounts `~/.aws` from your host. Run `aws configure` on your machine
-  first, or set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in `.env`.                                                                     
-                                                            
-  ---                                                                                                                                          
-                                                            
-  **`Resource Explorer index not found`**
-  Run `aws resource-explorer-2 create-index --type AGGREGATOR --region us-east-1` and verify with `aws resource-explorer-2 get-index --region
-  us-east-1` — wait until `State` is `ACTIVE` (can take several minutes to over an hour). Ensure `AWS_DEFAULT_REGION=us-east-1` in your `.env`.
-   
-  ---                                                                                                                                          
-                                                            
-  **`Password authentication failed` for PostgreSQL**                                                                                          
-  The Postgres volume was initialized with a different password. Reset it:
-  ```bash                                                                                                                                      
-  docker compose down -v                                    
-  docker compose up -d                                                                                                                         
-  docker compose exec backend python manage.py migrate                                                                                         
-   
-  ---                                                                                                                                          
-  Neo4j connection refused                                  
-  Neo4j takes ~30 seconds to start. Check logs with docker compose logs neo4j and wait for Started. before triggering a scan.
-
-  ---                                                                                                                                          
-  Celery not picking up tasks
-  Check logs: docker compose logs -f celery — you should see celery@... ready. If not, restart: docker compose restart celery. Also ensure     
-  OPA_URL is set and opa is in depends_on.                  
-                                                                                                                                               
-  ---                                                       
-  Scan stuck in running state                                                                                                                  
-  Check Celery worker logs: docker compose logs -f celery. Common causes: AWS rate limiting, missing IAM permissions, or Neo4j not ready.      
-  Verify the Resource Explorer index is ACTIVE.
-                                                                                                                                               
-  ---                                                       
-  Frontend blank page or CORS errors                                                                                                           
-  Rebuild the frontend: docker compose up -d --build frontend. Check browser console for failing API requests. Ensure                          
-  VITE_API_URL=http://localhost:8000 in docker-compose.yml.
-                                                                                                                                               
-  ---                                                       
-  Dashboard shows no data after scan                                                                                                           
-  Make sure you have connected a provider, tested the connection successfully, and run at least one scan. If the scan completed but findings   
-  are empty, see the Findings not appearing section above.
-  ```                               
 ---
 
 ## 🤝 Contributing
